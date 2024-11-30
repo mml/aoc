@@ -1,0 +1,6 @@
+[submodule "2023"]
+	path = 2023
+	url = git@github.com:mml/aoc2023.git
+[submodule "input"]
+	path = input
+	url = git@github.com:mml/aoc-input.git
