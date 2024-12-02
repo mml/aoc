@@ -33,9 +33,18 @@
       [(pred n0 (car ns)) (loop (car ns) (cdr ns))]
       [else #f])))
 
+(define (safe-report-pred* pred ns)
+  (or
+    (safe-report-pred? pred ns)
+    (let loop ([hd '()] [tl ns])
+      (cond
+        [(null? tl) #f]
+        [(safe-report-pred? pred (append hd (cdr tl))) #t]
+        [else (loop (append hd (list (car tl))) (cdr tl))]))))
+
 (define (safe-report? ns)
-  (or (safe-report-pred? safe< ns)
-      (safe-report-pred? safe> ns)))
+  (or (safe-report-pred* safe< ns)
+      (safe-report-pred* safe> ns)))
 
 (define (get-report line-port)
   (let ([d (get-datum line-port)])
