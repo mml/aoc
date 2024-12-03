@@ -1,0 +1,1 @@
+../../input/2024/23-input.txt
