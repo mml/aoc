@@ -20,9 +20,9 @@ my $y = 0;
 sub count ($str) {
   my $n = 0;
   local $_ = $str;
-  while (s/XMAS//) { ++$n }
+  while (s/XMAS/..../) { ++$n }
   local $_ = $str;
-  while (s/SAMX//) { ++$n }
+  while (s/SAMX/..../) { ++$n }
   return $n;
 }
 
