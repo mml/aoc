@@ -187,10 +187,9 @@
                           (iota (gridvector-width gvmap)))
                 (newline))
               (iota (gridvector-height gvmap))))
-  (define (loops? gv0 gs0)
-    (let ([gv (gridvector-copy gv0)]
-          [gs (guard-state-copy gs0)]
-          [visited (make-visited gv0 (guard-state-x gs0) (guard-state-y gs0))])
+  (define (loops? gv gs0)
+    (let ([gs (guard-state-copy gs0)]
+          [visited (make-visited gv (guard-state-x gs0) (guard-state-y gs0))])
       (let ([f (lambda (x y dir)
                  (let ([v (gridvector-ref visited x y)])
                    (cond
@@ -241,21 +240,21 @@
       (newline)
       locations))
   (define obs-count 0)
-  (define (try-obstruction gv0 gs0 x y)
-    ;(printf "try-obstruction ~a~C" obs-count #\return)
-    (set! obs-count (add1 obs-count))
+  (define (make-try-obstruction gv0 gs0)
     (let ([gv (gridvector-copy gv0)])
-      (gridvector-set! gv x y (content-item obstacle))
-      (cond
-        [(loops? gv gs0)
-         ;(printf "O(~a,~a)~n" x y)
-         #t]
-        [else #f])))
+      (lambda (x y)
+        ;(printf "try-obstruction ~a~C" obs-count #\return)
+        (set! obs-count (add1 obs-count))
+        (gridvector-set! gv x y (content-item obstacle))
+        (let ([result (loops? gv gs0)])
+          (gridvector-set! gv x y (gridvector-ref gv0 x y)) ; restore
+          result))))
   (define (count/maybe gv0 locations gs0)
-    (let ([worked (gridvector-map
-                    locations (lambda (x y v)
-                                (and v
-                                     (try-obstruction gv0 gs0 x y))))])
+    (let* ([try-obstruction (make-try-obstruction gv0 gs0)]
+           [worked (gridvector-map
+                     locations (lambda (x y v)
+                                 (and v
+                                      (try-obstruction x y))))])
       (newline)
       (fold-left (lambda (n x) (if x (add1 n) n)) 0 worked)))
 
