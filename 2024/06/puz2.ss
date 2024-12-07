@@ -19,6 +19,25 @@
   (define-record gridvector
     ((immutable width) (immutable height))
     ([(immutable vec) (make-vector (* width height) #f)]))
+  #|
+  ; Instead of separate x, y, and dir parameters, next time I might try these
+  ; records, which would mean I could treat the guard as just her location.
+  (define-record coord
+    (x y))
+  (define-record garde coord
+    (dir))
+  ; And then I could alwo write
+  (gridvector-set! gv loc x)
+  ; I also think a few helpers would be useful shorthand
+  (define X coord-x)
+  (define Y coord-y)
+  (define DIR garde-dir)
+  (define W gridvector-width)
+  (define H gridvector-height)
+  ; And also these almost-"deconstructing bindings"
+  (let-coord [x y] ...)
+  (let-garde [x y dir] ...)
+  |#
   (define (gridvector-ref gv x y)
     (vector-ref (gridvector-vec gv) (+ x (* y (gridvector-width gv)))))
   (define (visited? gv x y)
