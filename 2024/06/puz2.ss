@@ -3,6 +3,7 @@
 #;(define-enumeration direction
   (up down right left)
   directions)
+(time
 (let ()
   (define-enumeration content-item
     (clear obstacle start)
@@ -33,15 +34,33 @@
       (for-each
         (lambda (i)
           (vector-set! v´ i (vector-ref v i)))
-        (iota (vector-length v))))
-    gv)
-  #;(define (gridvector-for-each gv f f-after-row)
+        (iota (vector-length v)))
+      gv´))
+  (define (gridvector-for-each gv f after-row-thunk)
     (for-each (lambda (y)
                 (for-each (lambda (x)
-                            (f (gridvector-ref gv x y)))
-                          (iota width))
-                (f-after-row))
-              (iota height)))
+                            (f x y (gridvector-ref gv x y)))
+                          (iota (gridvector-width gv)))
+                (after-row-thunk))
+              (iota (gridvector-height gv))))
+  (define (iota2a a b)
+    (let loop ([i 0] [j 0])
+      (cond
+        [(= b j) '()]
+        [(= a i) (loop 0 (add1 j))]
+        [else (cons i (loop (add1 i) j))])))
+  (define (iota2b a b)
+    (let loop ([i 0] [j 0])
+      (cond
+        [(= b i) '()]
+        [(= a j) (loop (add1 i) 0)]
+        [else (cons i (loop i (add1 j)))])))
+  (define (gridvector-map gv f)
+    (let ([w (gridvector-width gv)][h (gridvector-height gv)])
+      (map (lambda (x y)
+             (f x y (gridvector-ref gv x y)))
+           (iota2a w h)
+           (iota2b w h))))
   (define (gridvector-count-true gv)
     (let ([n 0])
       (vector-for-each (lambda (x) (when x (set! n (add1 n))))
@@ -96,35 +115,55 @@
       (vector-fill! (gridvector-vec visited) (directions '()))
       (gridvector-set! visited x0 y0 (directions '(up)))
       visited))
-  (define (move-off-map? gs gvmap)
-    (let ([x (guard-state-x gs)][y (guard-state-y gs)][dir (guard-state-dir gs)]
-          [w (gridvector-width gvmap)][h (gridvector-height gvmap)])
-      (case dir
-        [(up) (zero? y)]
-        [(down) (= (sub1 h) y)]
-        [(left) (zero? x)]
-        [(right) (= (sub1 w) x)])))
+  (define (for/visited v f)
+    (for-each (lambda (x)
+                (for-each (lambda (y)
+                            (for-each (lambda (dir)
+                                        (f x y dir))
+                                      (enum-set->list (gridvector-ref v x y))))
+                          (iota (gridvector-height v))))
+              (iota (gridvector-width v))))
+  (define move-off-map?
+    (case-lambda
+      [(x y dir gvmap)
+       (let ([w (gridvector-width gvmap)][h (gridvector-height gvmap)])
+         (case dir
+           [(up) (zero? y)]
+           [(down) (= (sub1 h) y)]
+           [(left) (zero? x)]
+           [(right) (= (sub1 w) x)]))]
+      [(gs gvmap)
+       (let ([x (guard-state-x gs)][y (guard-state-y gs)][dir (guard-state-dir gs)])
+         (move-off-map? x y dir gvmap))]))
   (define (obstacle? x) (eq? (content-item obstacle) x))
-  (define (new-pos gs)
-    (let ([x (guard-state-x gs)][y (guard-state-y gs)][dir (guard-state-dir gs)])
-      (case dir
-        [(up) (values x (sub1 y))]
-        [(down) (values x (add1 y))]
-        [(left) (values (sub1 x) y)]
-        [(right) (values (add1 x) y)])))
+  (define new-pos
+    (case-lambda
+      [(x y dir)
+       (case dir
+         [(up) (values x (sub1 y))]
+         [(down) (values x (add1 y))]
+         [(left) (values (sub1 x) y)]
+         [(right) (values (add1 x) y)])]
+      [(gs)
+       (let ([x (guard-state-x gs)][y (guard-state-y gs)][dir (guard-state-dir gs)])
+         (new-pos x y dir))]))
   (define (rotate dir)
     (case dir
       [(up) (direction right)]
       [(right) (direction down)]
       [(down) (direction left)]
       [(left) (direction up)]))
-  (define (guard-move! gs gvmap visited)
+  (define (check-guard-move! f gs gvmap visited)
     (if (move-off-map? gs gvmap)
       #f
       (let-values ([(x´ y´) (new-pos gs)])
-        (cond 
+        (cond
           [(obstacle? (gridvector-ref gvmap x´ y´))
-           (set-guard-state-dir! gs (rotate (guard-state-dir gs)))]
+           (let ([dir´ (rotate (guard-state-dir gs))])
+             (if (f (guard-state-x gs) (guard-state-y gs) dir´)
+               'loop
+               (set-guard-state-dir! gs (rotate (guard-state-dir gs)))))]
+          [(f x´ y´ (guard-state-dir gs)) 'loop]
           [else
             (set-guard-state-x! gs x´)
             (set-guard-state-y! gs y´)
@@ -132,8 +171,11 @@
               visited x´ y´ (enum-set-union
                                 (gridvector-ref visited x´ y´)
                                 (directions
-                                  (list (guard-state-dir gs)))))]))))
+                                  (list (guard-state-dir gs)))))
+            (void)]))))
 
+  (define (guard-move! gs gvmap visited)
+    (check-guard-move! (lambda (x y dir) #f) gs gvmap visited))
   (define (print-visited gvmap visited)
     (for-each (lambda (y)
                 (for-each (lambda (x)
@@ -145,12 +187,84 @@
                           (iota (gridvector-width gvmap)))
                 (newline))
               (iota (gridvector-height gvmap))))
-
+  (define (loops? gv0 gs0)
+    (let ([gv (gridvector-copy gv0)]
+          [gs (guard-state-copy gs0)]
+          [visited (make-visited gv0 (guard-state-x gs0) (guard-state-y gs0))])
+      (let ([f (lambda (x y dir)
+                 (let ([v (gridvector-ref visited x y)])
+                   (cond
+                     [(enum-set-member? dir v)
+                      #;(newline)
+                      ;(print-visited gv visited)
+                      #;(printf "Loop detected at (~a,~a), already been here going ~a (~a)~n"
+                              x y dir (enum-set->list v))
+                      #t]
+                     [else #f])))])
+        (let loop ([n 0][ok (check-guard-move! f gs gv visited)])
+          ;(printf "loop ~a ~a     ~C" n obs-count #\return)
+          (case ok
+            [(loop) #t]
+            [(#f) #f]
+            [else (loop (add1 n) (check-guard-move! f gs gv visited))])))))
+  ; This clearly has a bug in it.  It misses 30 locations on the large input.
+  ; However, it turns out the code is fast enough to just try every location.
+  ; On my workstation, this took about 12s without optimizations, or 8s with
+  ; them.
+  (define (generate-maybes gv visited gs0)
+    (let ([i 0][off 0][already 0][start 0]
+          [locations (make-gridvector (gridvector-width gv) (gridvector-height gv))])
+      (for/visited visited (lambda (x y dir)
+                             (printf
+                               "generate-maybes ~a off=~a already=~a start=~a~C"
+                               i off already start #\return)
+                             (flush-output-port)
+                             (set! i (add1 i))
+                             (if (move-off-map? x y dir gv)
+                               (begin
+                                 (set! off (add1 off))
+                                 (void))
+                               (let-values ([(x´ y´) (new-pos x y dir)])
+                                 (cond
+                                   [(obstacle? (gridvector-ref gv x´ y´))
+                                    (set! already (add1 already))
+                                    (void)]
+                                   [(and (= (guard-state-x gs0) x´)
+                                         (= (guard-state-y gs0) y´))
+                                    (set! start (add1 start))
+                                    (void)]
+                                   [else
+                                     (gridvector-set! locations x´ y´ #t)])))))
+      (printf
+        "generate-maybes ~a off=~a already=~a start=~a~C"
+        i off already start #\return)
+      (newline)
+      locations))
+  (define obs-count 0)
+  (define (try-obstruction gv0 gs0 x y)
+    ;(printf "try-obstruction ~a~C" obs-count #\return)
+    (set! obs-count (add1 obs-count))
+    (let ([gv (gridvector-copy gv0)])
+      (gridvector-set! gv x y (content-item obstacle))
+      (cond
+        [(loops? gv gs0)
+         ;(printf "O(~a,~a)~n" x y)
+         #t]
+        [else #f])))
+  (define (count/maybe gv0 locations gs0)
+    (let ([worked (gridvector-map
+                    locations (lambda (x y v)
+                                (and v
+                                     (try-obstruction gv0 gs0 x y))))])
+      (newline)
+      (fold-left (lambda (n x) (if x (add1 n) n)) 0 worked)))
 
   (let ([m (with-input-from-file (car (command-line-arguments)) read-map-file)])
     (let-values ([(gv x0 y0) (map->gridvector m)])
-      (let ([gs (make-guard-state x0 y0 (direction up))]
-            [visited (make-visited gv x0 y0)])
+      (let* ([gs0 (make-guard-state x0 y0 (direction up))]
+             [visited (make-visited gv x0 y0)]
+             [gs (guard-state-copy gs0)])
+        (loops? gv gs)
         (let loop ([ok (guard-move! gs gv visited)])
           (if ok
             (begin
@@ -158,5 +272,10 @@
               ;(newline)
               (loop (guard-move! gs gv visited)))
             (begin
-              (print-visited gv visited)
-              (printf "n=~a~n" (gridvector-count-true visited)))))))))
+              ;(print-visited gv visited)
+              (let ([maybes (generate-maybes gv visited gs0)]
+                    [all (make-gridvector (gridvector-width gv)
+                                          (gridvector-height gv))])
+                (vector-fill! (gridvector-vec all) #t)
+                (printf "count=~a~n" (count/maybe gv all gs0)))
+              (printf "n=~a~n" (gridvector-count-true visited))))))))))
