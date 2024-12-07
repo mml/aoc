@@ -1,7 +1,7 @@
 SCHEME=/opt/chez/bin/scheme
 
 %.so: %.ss
-	echo '(compile-program "$<")' | $(SCHEME) -q --optimize-level 3
+	echo '(compile-imported-libraries #t) (compile-program "$<")' | $(SCHEME) -q --optimize-level 3
 
 test2:
 	$(SCHEME) --program puz2.ss test.txt
@@ -17,3 +17,6 @@ test1:
 
 puz1:
 	$(SCHEME) --program puz1.ss input.txt
+
+clean:
+	rm -f *.so

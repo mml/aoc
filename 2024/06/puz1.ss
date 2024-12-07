@@ -91,14 +91,14 @@
   (define (guard-move! gs gvmap visited)
     (if (move-off-map? gs gvmap)
       #f
-      (let-values ([(x´ y´) (new-pos gs)])
+      (let-values ([(x′ y′) (new-pos gs)])
         (cond 
-          [(obstacle? (gridvector-ref gvmap x´ y´))
+          [(obstacle? (gridvector-ref gvmap x′ y′))
            (set-guard-state-dir! gs (rotate (guard-state-dir gs)))]
           [else
-            (set-guard-state-x! gs x´)
-            (set-guard-state-y! gs y´)
-            (gridvector-set! visited x´ y´ #t)]))))
+            (set-guard-state-x! gs x′)
+            (set-guard-state-y! gs y′)
+            (gridvector-set! visited x′ y′ #t)]))))
   (define (print-visited gvmap visited)
     (for-each (lambda (y)
                 (for-each (lambda (x)

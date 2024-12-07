@@ -46,15 +46,15 @@
   (define (gridvector-set! gv x y v)
     (vector-set! (gridvector-vec gv) (+ x (* y (gridvector-width gv))) v))
   (define (gridvector-copy gv)
-    (let* ([gv´ (make-gridvector (gridvector-width gv) (gridvector-height gv))]
+    (let* ([gv′ (make-gridvector (gridvector-width gv) (gridvector-height gv))]
            [v (gridvector-vec gv)]
-           [v´ (gridvector-vec gv´)])
+           [v′ (gridvector-vec gv′)])
       ; slow
       (for-each
         (lambda (i)
-          (vector-set! v´ i (vector-ref v i)))
+          (vector-set! v′ i (vector-ref v i)))
         (iota (vector-length v)))
-      gv´))
+      gv′))
   (define (gridvector-for-each gv f after-row-thunk)
     (for-each (lambda (y)
                 (for-each (lambda (x)
@@ -175,20 +175,20 @@
   (define (check-guard-move! f gs gvmap visited)
     (if (move-off-map? gs gvmap)
       #f
-      (let-values ([(x´ y´) (new-pos gs)])
+      (let-values ([(x′ y′) (new-pos gs)])
         (cond
-          [(obstacle? (gridvector-ref gvmap x´ y´))
-           (let ([dir´ (rotate (guard-state-dir gs))])
-             (if (f (guard-state-x gs) (guard-state-y gs) dir´)
+          [(obstacle? (gridvector-ref gvmap x′ y′))
+           (let ([dir′ (rotate (guard-state-dir gs))])
+             (if (f (guard-state-x gs) (guard-state-y gs) dir′)
                'loop
                (set-guard-state-dir! gs (rotate (guard-state-dir gs)))))]
-          [(f x´ y´ (guard-state-dir gs)) 'loop]
+          [(f x′ y′ (guard-state-dir gs)) 'loop]
           [else
-            (set-guard-state-x! gs x´)
-            (set-guard-state-y! gs y´)
+            (set-guard-state-x! gs x′)
+            (set-guard-state-y! gs y′)
             (gridvector-set!
-              visited x´ y´ (enum-set-union
-                                (gridvector-ref visited x´ y´)
+              visited x′ y′ (enum-set-union
+                                (gridvector-ref visited x′ y′)
                                 (directions
                                   (list (guard-state-dir gs)))))
             (void)]))))
@@ -242,17 +242,17 @@
                                (begin
                                  (set! off (add1 off))
                                  (void))
-                               (let-values ([(x´ y´) (new-pos x y dir)])
+                               (let-values ([(x′ y′) (new-pos x y dir)])
                                  (cond
-                                   [(obstacle? (gridvector-ref gv x´ y´))
+                                   [(obstacle? (gridvector-ref gv x′ y′))
                                     (set! already (add1 already))
                                     (void)]
-                                   [(and (= (guard-state-x gs0) x´)
-                                         (= (guard-state-y gs0) y´))
+                                   [(and (= (guard-state-x gs0) x′)
+                                         (= (guard-state-y gs0) y′))
                                     (set! start (add1 start))
                                     (void)]
                                    [else
-                                     (gridvector-set! locations x´ y´ #t)])))))
+                                     (gridvector-set! locations x′ y′ #t)])))))
       (printf
         "generate-maybes ~a off=~a already=~a start=~a~C"
         i off already start #\return)
@@ -262,12 +262,13 @@
   (define (make-try-obstruction gv0 gs0)
     (let ([gv (gridvector-copy gv0)])
       (lambda (x y)
-        ;(printf "try-obstruction ~a~C" obs-count #\return)
-        (set! obs-count (add1 obs-count))
-        (gridvector-set! gv x y (content-item obstacle))
-        (let ([result (loops? gv gs0)])
-          (gridvector-set! gv x y (gridvector-ref gv0 x y)) ; restore
-          result))))
+        (let ([gv (gridvector-copy gv)])
+          ;(printf "try-obstruction ~a~C" obs-count #\return)
+          (set! obs-count (add1 obs-count))
+          (gridvector-set! gv x y (content-item obstacle))
+          (let ([result (loops? gv gs0)])
+            (gridvector-set! gv x y (gridvector-ref gv0 x y)) ; restore
+            result)))))
   (define (count/maybe gv0 locations gs0)
     (let* ([try-obstruction (make-try-obstruction gv0 gs0)]
            [worked (gridvector-map
