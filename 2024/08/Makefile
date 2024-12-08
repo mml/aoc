@@ -1,4 +1,4 @@
-export CHEZSCHEMELIBDIRS=../..::.
+export CHEZSCHEMELIBDIRS=../lib::.
 SCHEME=/opt/chez/bin/scheme
 
 test1:
