@@ -33,29 +33,32 @@
 (define (set->list s)
   (vector->list (hashtable-keys s)))
 
-(define (read-file)
-  (let ([h (make-eq-hashtable)])
-    (let loop ([l (get-line (current-input-port))] [y 0])
-      (cond
-        [(eof-object? l)
-         (set! H y)
-         h]
-        [else
-          (let ([len (string-length l)])
-            (set! W len)
-            (for-each
-              (lambda (c x)
-                (case c
-                  [(#\.) (void)]
-                  [else (eq-hashtable-update!
-                          h
-                          c
-                          (lambda (l)
-                            (cons (make-coord x y) l))
-                          '())]))
-              (string->list l)
-              (iota len)))
-          (loop (get-line (current-input-port)) (add1 y))]))))
+(define (read-file fnam)
+  (with-input-from-file
+    fnam
+    (lambda ()
+      (let ([h (make-eq-hashtable)])
+        (let loop ([l (get-line (current-input-port))] [y 0])
+          (cond
+            [(eof-object? l)
+             (set! H y)
+             h]
+            [else
+              (let ([len (string-length l)])
+                (set! W len)
+                (for-each
+                  (lambda (c x)
+                    (case c
+                      [(#\.) (void)]
+                      [else (eq-hashtable-update!
+                              h
+                              c
+                              (lambda (l)
+                                (cons (make-coord x y) l))
+                              '())]))
+                  (string->list l)
+                  (iota len)))
+              (loop (get-line (current-input-port)) (add1 y))]))))))
 
 (define (add-antinodes! set a b)
   (let* ([a-b (coord- a b)]
@@ -94,7 +97,10 @@
                              (add-antinodes! set a b)) as bs)))
                   (loop (car coords) (cdr coords))])))]))))
 
-(define (input)
-  (define-top-level-value 'h (with-input-from-file "input.txt" read-file)))
-(define h (with-input-from-file (car (command-line-arguments)) read-file))
-(printf "~a~n" (countem h))
+(define (main fname)
+  (let ([h (read-file fname)])
+    (printf "~a~n" (countem h))))
+
+(let ([args (command-line-arguments)])
+  (unless (null? args)
+    (apply main args)))
