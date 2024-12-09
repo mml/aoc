@@ -4,7 +4,10 @@
 (define (newline? c)
   (eq? #\newline c))
 (define (char->len c)
-  (- (char->integer c) (char->integer #\0)))
+  (cond
+    [(char-numeric? c) (- (char->integer c) (char->integer #\0))]
+    [else
+      (assertion-violation 'char->len "Non-numeric character" c)]))
 (define (read-file fname)
   (with-input-from-file fname
     (lambda ()
@@ -37,43 +40,43 @@
               (loop (add1 id) n (cdr file-lens) free-lens)
               (loop (add1 id) (+ n (car free-lens)) (cdr file-lens) (cdr free-lens)))])))))
 
-(define (free-list-help v start)
-  (cond
-    [(= (vector-length v) start) '()]
-    [(vector-ref v start)
-     (free-list-help v (add1 start))]
-    [else (let loop ([end start])
-            (cond
-              [(= (vector-length v) end) (list start (- end start))]
-              [(vector-ref v end) (cons (cons start (- end start))
+(module (free-list)
+  (define (free-list-help v start)
+    (cond
+      [(= (vector-length v) start) '()]
+      [(vector-ref v start)
+       (free-list-help v (add1 start))]
+      [else (let loop ([end start])
+              (cond
+                [(= (vector-length v) end) (list start (- end start))]
+                [(vector-ref v end) (cons (cons start (- end start))
                                           (free-list-help v end))]
-              [else (loop (add1 end))]))]))
+                [else (loop (add1 end))]))]))
 
-(define (free-list v)
-  (free-list-help v 0))
+  (define (free-list v)
+    (free-list-help v 0)))
 
-(define-syntax new-home
-  (identifier-syntax
-    [id (virtual-register 0)]
-    [(set! id e) (set-virtual-register! 0 e)]))
-
-(define (find-home fl start bytes)
-  (if (null? fl)
-    (begin
-      (set! new-home #f)
-      fl)
-    (let ([n (caar fl)] [len (cdar fl)])
-      (cond
-        [(>= n start)
-         (set! new-home #f)
-         fl]
-        [(< len bytes) (cons (car fl)
-                             (find-home (cdr fl) start bytes))]
-        [else
-          (set! new-home n)
-          (if (= len bytes)
-            (cdr fl)
-            (cons (cons (+ n bytes) (- len bytes)) (cdr fl)))]))))
+(module (find-home)
+  (define new-home)
+  (define (help fl start bytes)
+    (if (null? fl)
+      (begin
+        (set! new-home #f)
+        fl)
+      (let ([n (caar fl)] [len (cdar fl)])
+        (cond
+          [(>= n start)
+           (set! new-home #f)
+           fl]
+          [(< len bytes) (cons (car fl)
+                               (help (cdr fl) start bytes))]
+          [else
+            (set! new-home n)
+            (if (= len bytes)
+              (cdr fl)
+              (cons (cons (+ n bytes) (- len bytes)) (cdr fl)))]))))
+  (define (find-home fl start bytes)
+    (values new-home (help fl start bytes))))
 
 (define (move! v fl src dst len)
   (let byte ([src src] [dst dst] [len len])
@@ -82,25 +85,26 @@
       (vector-set! v src #f)
       (byte (add1 src) (add1 dst) (sub1 len)))))
 
-(define (compact v fl)
-  (compact-help v fl (sub1 (vector-length v))))
-(define (compact-help v fl r)
-  (let right ([r r])
-    (cond
-      [(negative? r) v]
-      [(not (vector-ref v r)) (right (sub1 r))]
-      [else
-        (let left ([l (sub1 r)])
-          (cond
-            [(or (= l -1)
-                 (not (eq? (vector-ref v l) (vector-ref v r))))
-             (let ([len (- r l)])
-               (let ([fl′ (find-home fl (add1 l) len)])
-                 (when new-home
-                   (move! v fl (add1 l) new-home len))
-                 (compact-help v fl′ l) ; should keep track of r
-                 ))]
-            [else (left (sub1 l))]))])))
+(module (compact!)
+  (define (compact! v fl)
+    (compact-help v fl (sub1 (vector-length v))))
+  (define (compact-help v fl r)
+    (let right ([r r])
+      (cond
+        [(negative? r) v]
+        [(not (vector-ref v r)) (right (sub1 r))]
+        [else
+          (let left ([l (sub1 r)])
+            (cond
+              [(or (= l -1)
+                   (not (eq? (vector-ref v l) (vector-ref v r))))
+               (let ([len (- r l)])
+                 (let-values ([(dst fl′) (find-home fl (add1 l) len)])
+                   (when dst
+                     (move! v fl (add1 l) dst len))
+                   (compact-help v fl′ l)
+                   ))]
+              [else (left (sub1 l))]))]))))
 
 (define (checksum v)
   (let loop ([n 0] [total 0])
@@ -115,8 +119,9 @@
 (define (main fname)
   (let* ([v (make-block-vector fname)]
          [f (free-list v)])
-    (printf "~a~n" (checksum (compact v f)))))
+    (compact! v f)
+    (printf "~a~n" (checksum v))))
 
 (let ([args (command-line-arguments)])
   (unless (null? args)
-    (apply main args)))
+    (time (apply main args))))

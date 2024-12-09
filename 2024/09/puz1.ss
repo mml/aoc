@@ -37,7 +37,7 @@
               (loop (add1 id) n (cdr file-lens) free-lens)
               (loop (add1 id) (+ n (car free-lens)) (cdr file-lens) (cdr free-lens)))])))))
 
-(define (compact v)
+(define (compact! v)
   (let loop ([l 0][r (sub1 (vector-length v))])
     (cond
       [(< r l) v]
@@ -60,8 +60,9 @@
 
 (define (main fname)
   (let ([v (make-block-vector fname)])
-    (printf "~a~n" (checksum (compact v)))))
+    (compact! v)
+    (printf "~a~n" (checksum v))))
 
 (let ([args (command-line-arguments)])
   (unless (null? args)
-    (apply main args)))
+    (time (apply main args))))
