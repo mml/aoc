@@ -1,31 +1,5 @@
 #!/usr/bin/env -S scheme --program
-(import (chezscheme) (gridvector) (product))
-(define (read-file f)
-  (with-input-from-file f
-    (lambda ()
-      (let loop ([line (get-line (current-input-port))][lines '()])
-        (cond
-          [(eof-object? line) (reverse! lines)]
-          [else (loop (get-line (current-input-port)) (cons line lines))])))))
-(define (make-map f)
-  (let ([lines (read-file f)])
-    (let* ([w (string-length (car lines))]
-           [h (length lines)]
-           [g (make-gv w h)])
-      (let loop ([y 0][lines lines])
-        (cond
-          [(null? lines) g]
-          [else
-            (for-each
-              (lambda (x char)
-                (gv-set! g x y char))
-              (iota w)
-              (string->list (car lines)))
-            (loop (add1 y) (cdr lines))])))))
-(define (maybe-enqueue q x)
-  (if (member x q)
-    q
-    (cons x q)))
+(import (chezscheme) (util) (gridvector) (product))
 (define (corners gv x y char)
   (let ([outside-corner (lambda (a b)
                           (if (not (or (eq? a char)
@@ -62,7 +36,7 @@
                (gv-set! counted x y #t)
                (loop
                  (fold-left
-                   maybe-enqueue
+                   maybe-enqueue!
                    (cdr queue)
                    (filter (lambda (c)
                              (not (apply gv-ref counted c)))
@@ -82,7 +56,7 @@
 
 (define (main f)
   (time
-    (let ([gv (make-map f)])
+    (let ([gv (gridvector-from-file f)])
       (let ([total (find-all-regions! gv)])
         (printf "~a~n" total)))))
 

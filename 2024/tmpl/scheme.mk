@@ -8,7 +8,7 @@ puz1:
 	$(SCHEME) --program puz1.ss input.txt
 
 debug1:
-	$(SCHEME) puz1.ss
+	$(SCHEME) --debug-on-exception puz1.ss
 
 fast1: whole-puz1.so
 	$(SCHEME) --program $< input.txt
@@ -20,22 +20,25 @@ puz2:
 	$(SCHEME) --program puz2.ss input.txt
 
 debug2:
-	$(SCHEME) puz2.ss
+	$(SCHEME) --debug-on-exception puz2.ss
 
 fast2: whole-puz2.so
 	$(SCHEME) --program $< input.txt
 
 ## helpers for compilation
 
+build:
+	mkdir -p build
+
 clean:
-	rm -f *.so *.wpo
+	rm -rf build
 
-.PRECIOUS: %.wpo
-%.wpo: %.ss
-	echo '(generate-wpo-files #t) (compile-program "$<")' | $(SCHEME) -q --optimize-level 3
+.PRECIOUS: build/%.wpo
+build/%.wpo: %.ss build
+	echo '(require-nongenerative-clause #t) (compile-imported-libraries #t) (generate-wpo-files #t) (compile-program "$<")' | $(SCHEME) -q --optimize-level 3
 
-%.so: %.ss
-	echo '(generate-wpo-files #t) (compile-program "$<")' | $(SCHEME) -q --optimize-level 3
+build/%.so: %.ss build
+	echo '(require-nongenerative-clause #t) (compile-imported-libraries #t) (generate-wpo-files #t) (compile-program "$<" "$@")' | $(SCHEME) -q --optimize-level 3
 
-whole-%.so: %.wpo
+build/whole-%.so: build/%.wpo build
 	echo '(compile-whole-program "$<" "$@")' | $(SCHEME) -q --optimize-level 3

@@ -1,5 +1,4 @@
 ; 2d array routines
-(require-nongenerative-clause #t)
 (library (gridvector)
   (export
     make-gv gv-width gv-height gv-vec

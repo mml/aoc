@@ -1,5 +1,5 @@
 #!/usr/bin/env -S scheme --program
-(import (chezscheme)); (gridvector) (product))
+(import (chezscheme) (util)); (gridvector) (product))
 (define (read-file f)
   (with-input-from-file f
     (lambda ()
@@ -17,7 +17,8 @@
 |#
 (define (main f)
   (time
-    (let ([--- (read-file f)])
+    ;(let ([gv (gridvector-from-file f)])
+    (let ([lines (get-lines-from-file f)])
       ---)))
 
 (let ([args (command-line-arguments)])
