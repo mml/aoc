@@ -1,6 +1,6 @@
 export CHEZSCHEMELIBDIRS=../lib::.
 SCHEME=/opt/chez/bin/scheme
-TEST_CASE=test3.txt
+TEST_CASE=test4.txt
 
 test1:
 	$(SCHEME) --debug-on-exception --program puz1.ss $(TEST_CASE)
