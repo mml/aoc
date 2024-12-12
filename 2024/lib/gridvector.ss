@@ -5,7 +5,8 @@
     make-gv gv-width gv-height gv-vec
     gv-ref gv-set!
     gv-copy
-    gv-neighbors gv-neighbors-8 gv-legal-coords?)
+    gv-neighbors gv-neighbors-8 gv-legal-coords?
+    with-gv-neighbors gv-neighbor-fetcher)
   (import (chezscheme))
   (define-record-type vec2
     (fields x y)
@@ -35,6 +36,22 @@
                   (list (sub1 x) y)
                   (list x (add1 y))
                   (list x (sub1 y)))))
+  (define (gv-neighbor-fetcher gv x y)
+    (lambda (dx dy)
+      (let ([x (+ x dx)] [y (+ y dy)])
+        (and (gv-legal-coords? gv x y)
+             (gv-ref gv x y)))))
+  (define-syntax (with-gv-neighbors stx)
+    (syntax-case stx ()
+      [(k (gv x y) body ...)
+       (with-implicit (k n ne e se s sw w nw)
+         #'(let ([neighbor (gv-neighbor-fetcher gv x y)])
+             (let ([n (neighbor 0 -1)] [ne (neighbor 1 -1)]
+                   [e (neighbor 1 0)] [se (neighbor 1 1)]
+                   [s (neighbor 0 1)] [sw (neighbor -1 1)]
+                   [w (neighbor -1 0)] [nw (neighbor -1 -1)])
+               body ...)))]))
+
   (define (gv-neighbors-8 gv x y)
     (filter (lambda (c)
               (apply gv-legal-coords? gv c))

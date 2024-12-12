@@ -27,12 +27,7 @@
     q
     (cons x q)))
 (define (corners gv x y char)
-  (let ([neighbor (lambda (dx dy)
-                    (let ([x (+ x dx)] [y (+ y dy)])
-                      (if (gv-legal-coords? gv x y)
-                        (gv-ref gv x y)
-                        #f)))]
-        [outside-corner (lambda (a b)
+  (let ([outside-corner (lambda (a b)
                           (if (not (or (eq? a char)
                                        (eq? b char)))
                             1
@@ -43,18 +38,15 @@
                                   (not (eq? c char)))
                            1
                            0))])
-    (let ([n (neighbor 0 -1)] [s (neighbor 0 1)]
-          [e (neighbor 1 0)] [w (neighbor -1 0)]
-          [ne (neighbor 1 -1)] [nw (neighbor -1 -1)]
-          [se (neighbor 1 1)] [sw (neighbor -1 1)])
+    (with-gv-neighbors (gv x y)
       (apply +
-             (append (map outside-corner
-                          (list n n s s)
-                          (list e w e w))
-                     (map inside-corner
-                          (list n n s s)
-                          (list e w e w)
-                          (list ne nw se sw)))))))
+        (append (map outside-corner
+                     (list n n s s)
+                     (list e w e w))
+                (map inside-corner
+                     (list n n s s)
+                     (list e w e w)
+                     (list ne nw se sw)))))))
 (define (find-region! gv counted x y)
   (if (gv-ref counted x y)
     0
