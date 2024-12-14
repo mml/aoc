@@ -8,4 +8,4 @@ test2:
 	./puz2.pl test.txt
 
 puz2:
-	./puz2.pl input.txt
+	./puz2.pl 101 103 < input.txt
