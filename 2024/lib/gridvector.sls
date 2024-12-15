@@ -1,8 +1,8 @@
 ; 2d array routines
 (library (gridvector)
   (export
-    make-gv gv-width gv-height gv-vec
-    gv-ref gv-set!
+    make-gv make-gv-same-size gv-width gv-height gv-vec
+    gv-ref gv-set! gv-update!
     gv-copy
     gv-neighbors gv-neighbors-8 gv-legal-coords?
     with-gv-neighbors gv-neighbor-fetcher)
@@ -14,15 +14,28 @@
     (fields width height vec)
     (protocol
       (lambda (new)
-        (lambda (width height)
-          (new width height (make-vector (fx* width height) #f)))))
+        (case-lambda
+          [(width height)
+           (new width height (make-vector (fx* width height) #f))]
+          [(width height obj)
+           (new width height (make-vector (fx* width height) obj))])))
     (nongenerative))
+  (define make-gv-same-size
+    (case-lambda
+      [(gv1)
+       (make-gv (gv-width gv1) (gv-height gv1))]
+      [(gv1 obj)
+       (make-gv (gv-width gv1) (gv-height gv1) obj)]))
   (define (vec-offset gv x y)
     (fx+ x (fx* y (gv-width gv))))
   (define (gv-ref gv x y)
     (vector-ref (gv-vec gv) (vec-offset gv x y)))
   (define (gv-set! gv x y v)
     (vector-set! (gv-vec gv) (vec-offset gv x y) v))
+  (define (gv-update! gv x y f)
+    (let ([v (gv-vec gv)]
+          [n (vec-offset gv x y)])
+      (vector-set! v n (f (vector-ref v n)))))
   (define (gv-legal-coords? gv x y)
     (and (<= 0 x)
          (<= 0 y)
