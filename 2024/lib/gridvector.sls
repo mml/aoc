@@ -5,8 +5,9 @@
     gv-ref gv-set! gv-update!
     gv-copy
     gv-neighbors gv-neighbors-8 gv-legal-coords? gv-legal-x? gv-legal-y?
-    with-gv-neighbors gv-neighbor-fetcher direction directions)
-  (import (chezscheme))
+    with-gv-neighbors gv-neighbor-fetcher direction directions
+    in-gv/indices)
+  (import (chezscheme) (product))
   (define-record-type vec2
     (fields x y)
     (nongenerative))
@@ -90,6 +91,14 @@
           (set! i (add1 i)))
         (gv-vec gv1))
       gv2))
+  ; a la racket
+  (define (in-gv/indices gv)
+    (let-values ([(xs ys) (product (iota (gv-width gv))
+                                   (iota (gv-height gv)))])
+      (values (map (lambda (x y) (gv-ref gv x y)) xs ys)
+              xs
+              ys)))
+
   (define all-directions (make-enumeration '(up down right left)))
   (define-syntax direction
     (syntax-rules (up down right left)

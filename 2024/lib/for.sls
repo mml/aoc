@@ -37,67 +37,74 @@
                    ([id v] ...)
                    body ...)])))
 
-#|
-(for/fold ([sum 0]
-           [rev-roots '()])
-          (result (printf "~a~%~a~%" sum rev-roots))
-          ([i '(1 2 3 4)])
-  (when (> i 2) (break))
-  (values (+ sum i) (cons (sqrt i) rev-roots)))
-
-(printf "---~%")
-|#
-
-  (module (for)
-    (define-syntax (for x)
-      (syntax-case x ()
-        [(k ([id v]) body ...)
-         (with-implicit (k break)
-         #'(call-with-current-continuation
-             (lambda (break)
-               (let loop ([l v])
-                 (cond
-                   [(null? l) (void)]
-                   [else
-                     (let ([id (car l)])
-                       body ...)
-                     (loop (cdr l))])))))]
-        [(k ([id1 v1] [id2 v2] [id3 v3] ...) body ...)
-         (with-implicit (k break)
-           (with-syntax ([(l3 ...) (generate-temporaries #'(id3 ...))])
-             #'(call-with-current-continuation
-                 (lambda (break)
-                   (let loop ([l1 v1] [l2 v2] [l3 v3] ...)
-                     (cond
-                       [(or (null? l1) (null? l2) (null? l3) ...) (void)]
-                       [else
-                         (let ([id1 (car l1)]
-                               [id2 (car l2)]
-                               [id3 (car l3)] ...)
-                           body ...)
-                         (loop (cdr l1) (cdr l2) (cdr l3) ...)]))))))])))
+  (module ((for for/cc))
+    (define-syntax (for/cc stx)
+      (syntax-case stx ()
+        [(_ (bind* ...) body ...)
+         (let loop ([bind* #'(bind* ...)]
+                    [ids '()] ; to be used for `do` version
+                    [lv-bind* '()]
+                    [loop-bind* '()]
+                    [car-bind* '()]
+                    [lists '()])
+           (cond
+             [(null? bind*)
+              (with-syntax ([(l ...) lists])
+                #`(let-values #,lv-bind*
+                    (let loop #,loop-bind* ; TODO: might be better written as a do loop
+                      (cond
+                        [(ormap null? (list l ...))
+                         (void)]
+                        [else
+                          (let #,car-bind*
+                            (begin body ...)
+                            (loop (cdr l) ...))]))))]
+             [else
+               (let ([b (car bind*)])
+                 (syntax-case b ()
+                   [[(id1 id2 ...) vs]
+                    (with-syntax ([(l1) (generate-temporaries #'(id1))]
+                                  [(l2 ...) (generate-temporaries #'(id2 ...))])
+                      (loop (cdr bind*)
+                            (append #'(id1 id2 ...) ids)
+                            (cons #'((l1 l2 ...) vs) lv-bind*)
+                            (append #'([l1 l1] [l2 l2] ...) loop-bind*)
+                            (append #'([id1 (car l1)] [id2 (car l2)] ...) car-bind*)
+                            (append #'(l1 l2 ...) lists)))]
+                   [[id v]
+                    (with-syntax ([(l) (generate-temporaries #'(id))])
+                      (loop (cdr bind*)
+                            (cons #'id ids)
+                            lv-bind*
+                            (cons #'(l v) loop-bind*)
+                            (cons #'(id (car l)) car-bind*)
+                            (cons #'l lists)))]))]))]))
+    ; TODO: add call/cc and break
+    (define-syntax (for stx)
+      (syntax-case stx ()
+        [(_ args ...) #'(for/cc args ...)])))
 
   ; --- similar to racket's for* --
   (module ((for* for*/cc))
-          (define-syntax (for*/cc x)
-            (syntax-case x ()
-              [(_ ([id v]) body ...)
-               #'(let loop ([l v])
-                   (cond
-                     [(null? l) (void)]
-                     [else
-                       (let ([id (car l)])
-                         body ...)
-                       (loop (cdr l))]))]
-              [(_ ([id1 v1] [id2 v2] [id3 v3] ...) body ...)
-               #'(for*/cc ([id1 v1])
-                          (for*/cc ([id2 v2] [id3 v3] ...)
-                                   body ...))]))
-          (define-syntax (for* x)
-            (syntax-case x (break)
-              [(k args ...)
-               (with-implicit (k break)
-                 #'(call-with-current-continuation
-                     (lambda (break)
-                       (for*/cc args ...))))])))
-)
+    (define-syntax (for*/cc x)
+      (syntax-case x ()
+        [(_ ([id v]) body ...)
+         #'(let loop ([l v])
+             (cond
+               [(null? l) (void)]
+               [else
+                 (let ([id (car l)])
+                   body ...)
+                 (loop (cdr l))]))]
+        [(_ ([id1 v1] [id2 v2] [id3 v3] ...) body ...)
+         #'(for*/cc ([id1 v1])
+                    (for*/cc ([id2 v2] [id3 v3] ...)
+                             body ...))]))
+    (define-syntax (for* x)
+      (syntax-case x (break)
+        [(k args ...)
+         (with-implicit (k break)
+           #'(call-with-current-continuation
+               (lambda (break)
+                 (for*/cc args ...))))])))
+  )
