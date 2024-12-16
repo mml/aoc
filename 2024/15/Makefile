@@ -1,12 +1,16 @@
 export CHEZSCHEMELIBDIRS=../lib::.
 SCHEME=/opt/chez/bin/scheme
 INPUTS=test0.ss test.ss input.ss
+WIDE_INPUTS=wide-test0.ss wide-test.ss wide-test2.ss wide-input.ss
 
 %.ss: %.txt pre.pl
 	./pre.pl $(patsubst %.txt,%,$<) < $< > $@
 
-test0: $(INPUTS)
-	$(SCHEME) --program puz1.ss test0.ss
+wide-%.ss: %.txt widen.pl pre.pl
+	./widen.pl < $< | ./pre.pl $(patsubst %.txt,%,$<) > $@
+
+test0: $(WIDE_INPUTS)
+	$(SCHEME) --program puz2.ss wide-test2.ss
 
 test1: $(INPUTS)
 	$(SCHEME) --program puz1.ss test.ss
@@ -14,22 +18,22 @@ test1: $(INPUTS)
 puz1: $(INPUTS)
 	$(SCHEME) --program puz1.ss input.ss
 
-debug1:
+debug1: $(INPUTS)
 	$(SCHEME) --debug-on-exception puz1.ss
 
-fast1: build/whole-puz1.so
+fast1: build/whole-puz1.so $(INPUTS)
 	$(SCHEME) --program $< input.ss
 
-test2:
-	$(SCHEME) --program puz2.ss test.txt
+test2: $(WIDE_INPUTS)
+	$(SCHEME) --program puz2.ss wide-test.ss
 
-puz2:
-	$(SCHEME) --program puz2.ss input.txt
+puz2: $(WIDE_INPUTS)
+	$(SCHEME) --program puz2.ss wide-input.ss
 
-debug2:
+debug2: $(WIDE_INPUTS)
 	$(SCHEME) --debug-on-exception puz2.ss
 
-fast2: build/whole-puz2.so
+fast2: build/whole-puz2.so $(WIDE_INPUTS)
 	$(SCHEME) --program $< input.txt
 
 ## helpers for compilation

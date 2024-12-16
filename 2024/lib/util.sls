@@ -1,5 +1,6 @@
 (library (util)
-  (export id get-lines-from-file gridvector-from-file maybe-enqueue!
+  (export id any? all?
+          get-lines-from-file gridvector-from-file maybe-enqueue!
           range
           argmax
           gv-convolve kernel sobel)
@@ -7,6 +8,19 @@
           (gridvector)
           (for))
   (define (id x) x)
+  ; all? and any? have syntax similar to apply, and semantics similar to
+  ; andmap (for-all) and ormap (exists)
+  (define-syntax all?
+    (syntax-rules ()
+      [(_ f ys) (andmap f ys)]
+      [(_ f x1 ys) (andmap (lambda (y) (f x1 y)) ys)]
+      [(_ f x1 x2 x3 ... ys) (andmap (lambda (y) (f x1 x2 x3 ... y)) ys)]))
+  (define-syntax any?
+    (syntax-rules ()
+      [(_ f ys) (exists f ys)]
+      [(_ f x1 ys) (exists (lambda (y) (f x1 y)) ys)]
+      [(_ f x1 x2 x3 ... ys) (exists (lambda (y) (f x1 x2 x3 ... y)) ys)]))
+
   (define (argmax f l)
     (let loop ([l l] [xmax #f] [fmax #f])
       (cond

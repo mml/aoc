@@ -50,7 +50,7 @@
 
   (module (for)
     (define-syntax (for x)
-      (syntax-case x (break)
+      (syntax-case x ()
         [(k ([id v]) body ...)
          (with-implicit (k break)
          #'(call-with-current-continuation

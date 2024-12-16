@@ -4,8 +4,8 @@
     make-gv make-gv-same-size gv-width gv-height gv-vec
     gv-ref gv-set! gv-update!
     gv-copy
-    gv-neighbors gv-neighbors-8 gv-legal-coords?
-    with-gv-neighbors gv-neighbor-fetcher)
+    gv-neighbors gv-neighbors-8 gv-legal-coords? gv-legal-x? gv-legal-y?
+    with-gv-neighbors gv-neighbor-fetcher direction directions)
   (import (chezscheme))
   (define-record-type vec2
     (fields x y)
@@ -40,6 +40,12 @@
     (and (<= 0 x)
          (<= 0 y)
          (<= x (sub1 (gv-width gv)))
+         (<= y (sub1 (gv-height gv)))))
+  (define (gv-legal-x? gv x)
+    (and (<= 0 x)
+         (<= x (sub1 (gv-width gv)))))
+  (define (gv-legal-y? gv y)
+    (and (<= 0 y)
          (<= y (sub1 (gv-height gv)))))
   (define (gv-neighbors gv x y)
     (filter (lambda (c)
