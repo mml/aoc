@@ -32,6 +32,20 @@
               (for/fold ([sum 0])
                         ([i (iota 11)])
                 (+ sum i)))
+  (let ([x #f])
+    (test-equal 110
+      (for/fold ([sum 0])
+                (result
+                  (set! x sum)
+                  (* 2 sum))
+                ([i (iota 11)])
+                (+ sum i)))
+    (test-equal 55 x))
+  (test-equal 110
+              (for/fold ([sum 0])
+                        (result (* 2 sum))
+                        ([i (iota 11)])
+                (+ sum i)))
   (test-equal '(a2 b2 a2 b1 a1 b2 a1 b1)
               (let ([rv '()])
                 (for* ([a '(a1 a2)]

@@ -107,4 +107,16 @@
            #'(call-with-current-continuation
                (lambda (break)
                  (for*/cc args ...))))])))
+
+  (pretty-format 'for '(for ([bracket x e] 0 ...) #f e #f e ...))
+  (pretty-format 'for* '(for* ([bracket x e] 0 ...) #f e #f e ...))
+  (pretty-format
+    'for/fold
+    '(alt
+       (for/fold ([bracket x e] 0 ...) 9 ([bracket x e] 0 ...) #f e #f e ...)
+       (for/fold ([bracket x e] 0 ...)
+               9 (result r 7 ...)
+               9 ([bracket x e 0 ...])
+         #f e
+         #f e ...)))
   )
