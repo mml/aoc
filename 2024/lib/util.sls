@@ -32,7 +32,8 @@
           (let ([fx (f (car l))])
             (if (> fx fmax)
               (loop (cdr l) (car l) fx)
-              (loop (cdr l) xmax fmax)))])))  (define range
+              (loop (cdr l) xmax fmax)))])))
+  (define range
     (case-lambda
       [(stop) (iota stop)]
       [(start stop)
