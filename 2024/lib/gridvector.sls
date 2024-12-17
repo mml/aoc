@@ -4,7 +4,9 @@
     make-gv make-gv-same-size gv-width gv-height gv-vec
     gv-ref gv-set! gv-update!
     gv-copy
-    gv-neighbors gv-neighbors-8 gv-legal-coords? gv-legal-x? gv-legal-y?
+    gv-neighbors gv-neighbor-coords gv-neighbors-8 gv-legal-coords? gv-legal-x? gv-legal-y?
+    compass-direction compass-directions compass-direction?
+    compass-directions-cardinal compass-directions-ordinal compass-directions-all
     with-gv-neighbors gv-neighbor-fetcher direction directions
     in-gv/indices)
   (import (chezscheme) (product))
@@ -55,11 +57,34 @@
                   (list (sub1 x) y)
                   (list x (add1 y))
                   (list x (sub1 y)))))
-  (define (gv-neighbor-fetcher gv x y)
-    (lambda (dx dy)
+  (define (gv-neighbor-coords gv x y dir)
+    (assert (compass-direction? dir))
+    (let-values ([(dx dy) (case dir
+                            [n (values 0 -1)] [ne (values 1 -1)]
+                            [e (values 1 0)] [se (values 1 1)]
+                            [s (values 0 1)] [sw (values -1 1)]
+                            [w (values -1 0)] [nw (values -1 -1)])])
       (let ([x (+ x dx)] [y (+ y dy)])
-        (and (gv-legal-coords? gv x y)
-             (gv-ref gv x y)))))
+        (if (gv-legal-coords? gv x y)
+          (values x y)
+          (values #f #f)))))
+    (define (gv-neighbor-fetcher gv x y)
+    (rec fetch
+      (case-lambda
+        [(dx dy)
+         (let ([x (+ x dx)] [y (+ y dy)])
+           (and (gv-legal-coords? gv x y)
+                (gv-ref gv x y)))]
+        [(dir)
+         (assert (compass-direction? dir))
+         (call-with-values
+           (lambda ()
+             (case dir
+               [n (values 0 -1)] [ne (values 1 -1)]
+               [e (values 1 0)] [se (values 1 1)]
+               [s (values 0 1)] [sw (values -1 1)]
+               [w (values -1 0)] [nw (values -1 -1)]))
+           fetch)])))
   (define-syntax (with-gv-neighbors stx)
     (syntax-case stx ()
       [(k (gv x y) body ...)
@@ -70,6 +95,15 @@
                    [s (neighbor 0 1)] [sw (neighbor -1 1)]
                    [w (neighbor -1 0)] [nw (neighbor -1 -1)])
                body ...)))]))
+
+  ; compass direction
+  (define-enumeration compass-direction (n ne e se s sw w nw) compass-directions)
+  (define (compass-direction? x)
+    (enum-set-member? x (enum-set-universe (compass-directions))))
+  (define compass-directions-cardinal (compass-directions n e s w))
+  (define compass-directions-ordinal (compass-directions ne se nw sw))
+  (define compass-directions-all
+    (enum-set-union compass-directions-cardinal compass-directions-ordinal))
 
   (define (gv-neighbors-8 gv x y)
     (filter (lambda (c)

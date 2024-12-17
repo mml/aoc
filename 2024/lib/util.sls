@@ -1,9 +1,11 @@
 (library (util)
   (export id any? all?
-          get-lines-from-file gridvector-from-file maybe-enqueue!
+          get-lines-from-file gridvector-from-file print-gv
+          maybe-enqueue!
           range
           argmax
-          gv-convolve kernel sobel)
+          gv-convolve kernel sobel
+          let-list)
   (import (chezscheme)
           (gridvector)
           (for))
@@ -64,6 +66,15 @@
                  (loop (add1 y) (cdr lines))]))))]
       [(path)
        (gridvector-from-file path id)]))
+  (define print-gv
+    (case-lambda
+      [(gv)
+       (print-gv gv id)]
+      [(gv entry->print-datum)
+       (for ([y (iota (gv-height gv))])
+         (for ([x (iota (gv-width gv))])
+           (display (entry->print-datum (gv-ref gv x y))))
+         (newline))]))
   (define-syntax kernel
     (syntax-rules ()
       [(_ (a b c) (d e f) (g h i))
@@ -131,4 +142,22 @@
           [else
             (loop tl (car tl) (cdr tl))]))))
 
+  ; structured binding
+  (define-syntax (let-list stx)
+    (syntax-case stx ()
+      ;[(_ ([]) body ...)
+      ; #'(begin body ...)]
+      [(_ ([id1] l) body ...)
+       #'(let ([id1 (car l)])
+           body ...)]
+      [(_ ([(id1 id2) l]) body ...)
+       #'(let ([id1 (car l)]
+               [id2 (cadr l)])
+           body ...)]
+      [(_ ([(id1 id2 id3 ...) l]) body ...)
+       #'(let ([id1 (car l)]
+               [id2 (cadr l)])
+           (let-list ([(id3 ...) (cddr l)]) body ...))]))
+
+  (pretty-format 'let-list '(_ ([bracket (x ...) e]) #f body ...))
   );
