@@ -1,8 +1,11 @@
-export CHEZSCHEMELIBDIRS=../lib::.
+export CHEZSCHEMELIBDIRS=~/.akku/lib::~/.akku/libobj:../lib::.
 SCHEME=/opt/chez/bin/scheme
 
 %.sexpr: %.txt pre.pl
 	./pre.pl $< > $@
+
+test2: test2.sexpr
+	$(SCHEME) --program puz2.ss test2.sexpr
 
 test1: test.sexpr
 	$(SCHEME) --program puz1.ss test.sexpr
@@ -16,11 +19,16 @@ debug1:
 fast1: whole-puz1.so input.sexpr
 	$(SCHEME) --program $< input.input.sexpr
 
-test2:
-	$(SCHEME) --program puz2.ss test.txt
+puz2: input.sexpr
+	$(SCHEME) --program puz2.ss input.sexpr
 
-puz2:
-	$(SCHEME) --program puz2.ss input.txt
+# Calculate all values of A that suffice
+calc: input.sexpr
+	./calc.ss
+
+# Run the debugger
+go: input.sexpr
+	$(SCHEME) --program puz2.ss go
 
 debug2:
 	$(SCHEME) --debug-on-exception puz2.ss

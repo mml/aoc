@@ -16,7 +16,7 @@
                       #'(call-with-current-continuation
                           (lambda (cont)
                             (let ([accum-id init] ...)
-                              (let ([break (lambda () (cont (begin res1 res2 ...)))])
+                              (let ([break (lambda () (cont res1 res2 ...))])
                                 (letrec ([loop (lambda (l ...)
                                                  (cond
                                                    [(or (null? l) ...) (break)]
@@ -33,7 +33,7 @@
           ([id v] ...)
           body ...)
        #'(for/fold ([accum-id init] ...)
-                   (result (values accum-id ...))
+                   (result accum-id ...)
                    ([id v] ...)
                    body ...)])))
 

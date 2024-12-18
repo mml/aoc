@@ -5,6 +5,8 @@
           range
           argmax
           gv-convolve kernel sobel
+          split-string
+          list-set!
           let-list)
   (import (chezscheme)
           (gridvector)
@@ -40,7 +42,11 @@
        (let loop ([n (sub1 stop)] [l '()])
          (if (< n start)
            l
-           (loop (sub1 n) (cons n l))))]))
+           (loop (sub1 n) (cons n l))))]
+      [(start stop step)
+       (do ([n start (+ n step)]
+            [l '() (cons n l)])
+           ((>= n stop) (reverse! l)))]))
   (define (get-lines-from-file path)
     (with-input-from-file path
       (lambda ()
@@ -159,6 +165,29 @@
        #'(let ([id1 (car l)]
                [id2 (cadr l)])
            (let-list ([(id3 ...) (cddr l)]) body ...))]))
+
+  (define (split-string s)
+    (let loop ([s (string->list s)] [cs '()] [ss '()])
+      (cond
+        [(null? s)
+         (reverse! (if (null? cs) ss (cons (list->string (reverse! cs)) ss)))]
+        [(char-whitespace? (car s))
+         (if (null? cs)
+           (loop (cdr s) cs ss)
+           (loop (cdr s) '() (cons (list->string (reverse! cs)) ss)))]
+        [else
+          (loop (cdr s) (cons (car s) cs) ss)])))
+
+  (define (list-set! l n0 obj)
+    (let loop ([l l] [n n0])
+      (cond
+        [(null? l) (error 'list-set! "out of bounds" n)]
+        [(zero? n) (set-car! l obj)]
+        [else (loop (cdr l) (sub1 n))]))
+    l)
+
+
+
 
   (pretty-format 'let-list '(_ ([bracket (x ...) e]) #f body ...))
   );
