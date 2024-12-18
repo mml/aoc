@@ -6,8 +6,9 @@
           argmax
           gv-convolve kernel sobel
           split-string
-          list-set!
-          let-list)
+          list-set! flip-assoc!
+          let-list
+          numeral->number)
   (import (chezscheme)
           (gridvector)
           (for))
@@ -166,17 +167,24 @@
                [id2 (cadr l)])
            (let-list ([(id3 ...) (cddr l)]) body ...))]))
 
-  (define (split-string s)
-    (let loop ([s (string->list s)] [cs '()] [ss '()])
-      (cond
-        [(null? s)
-         (reverse! (if (null? cs) ss (cons (list->string (reverse! cs)) ss)))]
-        [(char-whitespace? (car s))
-         (if (null? cs)
-           (loop (cdr s) cs ss)
-           (loop (cdr s) '() (cons (list->string (reverse! cs)) ss)))]
-        [else
-          (loop (cdr s) (cons (car s) cs) ss)])))
+  (define split-string
+    (case-lambda
+      [(s pred-or-char)
+       (let ([pred (if (char? pred-or-char)
+                     (lambda (ch) (char=? ch pred-or-char))
+                     pred-or-char)])
+         (let loop ([s (string->list s)] [cs '()] [ss '()])
+           (cond
+             [(null? s)
+              (reverse! (if (null? cs) ss (cons (list->string (reverse! cs)) ss)))]
+             [(pred (car s))
+              (if (null? cs)
+                (loop (cdr s) cs ss)
+                (loop (cdr s) '() (cons (list->string (reverse! cs)) ss)))]
+             [else
+               (loop (cdr s) (cons (car s) cs) ss)])))]
+      [(s)
+       (split-string char-whitespace?)]))
 
   (define (list-set! l n0 obj)
     (let loop ([l l] [n n0])
@@ -186,6 +194,16 @@
         [else (loop (cdr l) (sub1 n))]))
     l)
 
+  (define (flip-assoc! l)
+    (for-each (lambda (pr)
+                (let ([CAR (car pr)] [CDR (cdr pr)])
+                  (set-car! pr CDR)
+                  (set-cdr! pr CAR)))
+              l)
+    l)
+(define (numeral->number c)
+  (assert (char-numeric? c))
+  (- (char->integer c) (char->integer #\0)))
 
 
 

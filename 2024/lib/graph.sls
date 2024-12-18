@@ -1,5 +1,6 @@
 (library (graph)
   (export make-node node-name node-props node-props-set!
+          node-prop-set!
           make-node-adjacency-list node-adjacency-list-neighbors
           node-adjacency-list-neighbors-set!
           node->struct
@@ -18,6 +19,21 @@
     (lambda (new)
       (lambda (name)
         (new name '())))))
+(define (node-prop-set! n k v)
+  (let ([props (node-props n)])
+    (cond
+      [(null? props) (node-props-set! n (list (cons k v)))]
+      [else
+        (let loop ([left (car props)] [props (cdr props)])
+          (cond
+            [(null? props)
+             (set-cdr! left (list (cons k v)))]
+            [(eq? k (caar props))
+             (set-cdr! (car props) v)]
+            [else
+              (loop (car props) (cdr props))]))])))
+
+
 
 (define-record-type node-adjacency-list
   (parent node)

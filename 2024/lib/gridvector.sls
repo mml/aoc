@@ -9,7 +9,7 @@
     compass-directions-cardinal compass-directions-ordinal compass-directions-all
     with-gv-neighbors gv-neighbor-fetcher direction directions
     in-gv/indices)
-  (import (chezscheme) (product))
+  (import (chezscheme) (product) (for))
   (define-record-type vec2
     (fields x y)
     (nongenerative))
@@ -50,6 +50,15 @@
   (define (gv-legal-y? gv y)
     (and (<= 0 y)
          (<= y (sub1 (gv-height gv)))))
+  (define (in-gv-neighbors/indices gv x y)
+    (for/fold ([val* '()]
+               [x* '()]
+               [y* '()])
+              ([c (gv-neighbors gv x y)])
+      (let-values ([(x y) (apply values c)])
+        (values (cons (gv-ref gv x y) val*)
+                (cons x x*)
+                (cons y y*)))))
   (define (gv-neighbors gv x y)
     (filter (lambda (c)
               (apply gv-legal-coords? gv c))
