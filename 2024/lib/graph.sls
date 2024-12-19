@@ -5,9 +5,9 @@
           node-adjacency-list-neighbors-set!
           node->struct
           make-neighbor neighbor-dst neighbor-weight
-          node-add-neighbor!
+          node-add-neighbor! node-remove-neighbor!
           make-graph-adjacency-list graph-adjacency-list-nodes graph-adjacency-list-nodes-set!
-          graph-add-node!
+          graph-add-node! graph-remove-node!
           make-prioq prioq-add! prioq-pop! prioq-empty? decrease!
           dijkstra)
   (import (chezscheme)
@@ -50,6 +50,12 @@
   (node-adjacency-list-neighbors-set!
     n
     (cons (make-neighbor dst weight) (node-adjacency-list-neighbors n))))
+(define (node-remove-neighbor! n dst)
+  (node-adjacency-list-neighbors-set!
+    n
+    (remp (lambda (nbr) (eq? (neighbor-dst nbr) dst))
+          (node-adjacency-list-neighbors n)))
+  n)
 (define-record-type graph-adjacency-list
   (fields (mutable nodes))
   (protocol
@@ -64,6 +70,10 @@
      (graph-adjacency-list-nodes-set!
        g (cons node-or-name (graph-adjacency-list-nodes g)))]
     [else (graph-add-node! g (make-node-adjacency-list node-or-name))]))
+(define (graph-remove-node! g n)
+  (graph-adjacency-list-nodes-set!
+    g
+    (remove n (graph-adjacency-list-nodes g))))
 (define (node->struct n)
   `(node ,(node-name n)
      (neighbors ,@(map (lambda (nbr)
@@ -166,5 +176,26 @@
           (set-visited! visited node1)
           (loop))))
     (prioq->alist distances)))
+
+;
+(record-writer (type-descriptor node-adjacency-list)
+  (lambda (r p wr)
+    (display "#<node " p)
+    (display (node-name r) p)
+    (display " " p)
+    (wr (length (node-adjacency-list-neighbors r)) p)
+    (display " neighbors>" p)))
+(record-writer (type-descriptor neighbor)
+  (lambda (r p wr)
+    (display "#<neighbor " p)
+    (wr (neighbor-weight r) p)
+    (display " " p)
+    (wr (neighbor-dst r) p)
+    (display ">" p)))
+(record-writer (type-descriptor graph-adjacency-list)
+  (lambda (r p wr)
+    (display "#" p)
+    (display (length (graph-adjacency-list-nodes r)) p)
+    (display "<graph>" p)))
 ;
 )

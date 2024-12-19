@@ -10,7 +10,7 @@ puz1:
 debug1:
 	$(SCHEME) --debug-on-exception puz1.ss
 
-fast1: whole-puz1.so
+fast1: build/whole-puz1.so
 	$(SCHEME) --program $< input.txt
 
 test2:
@@ -22,7 +22,7 @@ puz2:
 debug2:
 	$(SCHEME) --debug-on-exception puz2.ss
 
-fast2: whole-puz2.so
+fast2: build/whole-puz2.so
 	$(SCHEME) --program $< input.txt
 
 ## helpers for compilation
@@ -35,10 +35,10 @@ clean:
 
 .PRECIOUS: build/%.wpo
 build/%.wpo: %.ss build
-	echo '(require-nongenerative-clause #t) (compile-imported-libraries #t) (generate-wpo-files #t) (compile-program "$<")' | $(SCHEME) -q --optimize-level 3
+	echo '(require-nongenerative-clause #t) (compile-imported-libraries #t) (generate-wpo-files #t) (compile-program "$<" "$(subst %.wpo,%.so,$@)")' | $(SCHEME) -q --optimize-level 3
 
 build/%.so: %.ss build
 	echo '(require-nongenerative-clause #t) (compile-imported-libraries #t) (generate-wpo-files #t) (compile-program "$<" "$@")' | $(SCHEME) -q --optimize-level 3
 
-build/whole-%.so: build/%.wpo build
+build/whole-%.so: build/%.wpo build/%.so build
 	echo '(compile-whole-program "$<" "$@")' | $(SCHEME) -q --optimize-level 3
