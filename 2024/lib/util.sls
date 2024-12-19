@@ -3,7 +3,7 @@
           get-lines-from-file gridvector-from-file print-gv
           maybe-enqueue!
           range
-          argmax flip
+          argmax flip map-with-values map-values
           gv-convolve kernel sobel
           split-string
           list-set! flip-assoc!
@@ -40,6 +40,15 @@
   (define (flip f)
     (lambda (x2 x1 . args)
       (apply f x1 x2 args)))
+  (define (map-with-values pro con)
+    (call-with-values pro
+                      (lambda args
+                        (apply map con args))))
+
+(define-syntax map-values
+  (syntax-rules ()
+    [(_ con body ...)
+     (map-with-values (lambda () body ...) con)]))
   (define range
     (case-lambda
       [(stop) (iota stop)]

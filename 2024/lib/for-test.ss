@@ -35,9 +35,9 @@
   (let ([x #f])
     (test-equal 110
       (for/fold ([sum 0])
-                (result
-                  (set! x sum)
-                  (* 2 sum))
+                (result (begin
+                          (set! x sum)
+                          (* 2 sum)))
                 ([i (iota 11)])
                 (+ sum i)))
     (test-equal 55 x))
