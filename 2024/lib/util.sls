@@ -3,12 +3,13 @@
           get-lines-from-file gridvector-from-file print-gv
           maybe-enqueue!
           range
-          argmax
+          argmax flip
           gv-convolve kernel sobel
           split-string
           list-set! flip-assoc!
           let-list
-          numeral->number)
+          numeral->number
+          )
   (import (chezscheme)
           (gridvector)
           (for))
@@ -36,6 +37,9 @@
             (if (> fx fmax)
               (loop (cdr l) (car l) fx)
               (loop (cdr l) xmax fmax)))])))
+  (define (flip f)
+    (lambda (x2 x1 . args)
+      (apply f x1 x2 args)))
   (define range
     (case-lambda
       [(stop) (iota stop)]
