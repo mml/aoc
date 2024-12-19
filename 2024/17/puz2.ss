@@ -95,7 +95,7 @@
                ["a" (list-set! (top-level-value 'st) 1 (string->number (caddr words)))]
                ["b" (list-set! (top-level-value 'st) 2 (string->number (caddr words)))]
                ["c" (list-set! (top-level-value 'st) 3 (string->number (caddr words)))]
-               [else (display "set (a|b|c) <value>")])]
+               [else (display "set (a|b|c) <value>\n")])]
             [else (display "(n)ext (r)un (l)ist (s)et (re)start (q)uit\n")]))
         (display "dbg> ")))))
 (define disassemble
