@@ -196,6 +196,8 @@
   (lambda (r p wr)
     (display "#" p)
     (display (length (graph-adjacency-list-nodes r)) p)
-    (display "<graph>" p)))
+    (display "<graph " p)
+    (wr (graph-adjacency-list-nodes r) p)
+    (display ">" p)))
 ;
 )

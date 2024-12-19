@@ -2,6 +2,7 @@
 (library (gridvector)
   (export
     make-gv make-gv-same-size gv-width gv-height gv-vec
+    display-gv gv->string
     gv-ref gv-set! gv-update!
     gv-copy
     gv-neighbors gv-neighbor-coords gv-neighbors-8 gv-legal-coords? gv-legal-x? gv-legal-y?
@@ -23,6 +24,22 @@
           [(width height obj)
            (new width height (make-vector (fx* width height) obj))])))
     (nongenerative))
+  (define display-gv
+    (case-lambda
+      [(gv)
+       (display-gv gv (current-output-port))]
+      [(gv p)
+       (for ([y (iota (gv-height gv))])
+         (for ([x (iota (gv-width gv))])
+           (let ([entry (gv-ref gv x y)])
+             (display entry p)
+             (unless (char? entry)
+               (display " " p))))
+         (newline p))]))
+  (define (gv->string gv)
+    (call-with-string-output-port
+      (lambda (p) (display-gv gv p))))
+
   (define make-gv-same-size
     (case-lambda
       [(gv1)
@@ -149,4 +166,15 @@
       [(_ down) 'down]
       [(_ right) 'right]
       [(_ left) 'left]))
-  (define directions (enum-set-constructor all-directions)))
+  (define directions (enum-set-constructor all-directions))
+
+  (record-writer (type-descriptor gv)
+    (lambda (r p wr)
+      (display "#<gv " p)
+      (wr (gv-width r) p)
+      (display "×" p)
+      (wr (gv-height r) p)
+      (display ">" p)))
+
+;
+)
