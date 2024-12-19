@@ -21,8 +21,8 @@
                 ;(display-diff expected actual)
                 (newline)))))])
 
-  (test-begin "map-with-values")
   (test-runner-on-test-end! (test-runner-get) test-on-test-end-diff)
+  (test-begin "map-with-values")
   (let ()
     (import (product))
 
@@ -43,4 +43,57 @@
                 (apply + (map-values * (product (iota 5) (iota 3)))))
     )
 
-  (test-end "map-with-values"))
+  (test-end "map-with-values")
+
+  (test-skip "slow") ; Comment out when you really need to be sure.
+  (test-begin "uniq")
+  (let ()
+    (for-each (lambda (f)
+                (test-equal
+                  '(0 1 2 3 4)
+                  (f = '(0 0 0 0 1 1 1 1 1 2 3 3 3 3 3 4 4))))
+              (list uniq uniq!))
+
+    (for-each (lambda (f)
+                (test-equal
+                  '(1 0 1 2 3 4)
+                  (f = '(1 0 1 1 1 1 1 1 2 2 2 2 2 2 2 3 3 3 3 3 4 4 4))))
+              (list uniq uniq!))
+
+    (test-group "slow"
+      (let ([l (iota 10000000)])
+        (time (test-equal l (uniq = l)))
+        (time (test-equal l (uniq! = l))))
+      (let ([l (iota 100000000)])
+        (time (test-equal l (uniq! = l)))))
+
+  (test-end "uniq"))
+
+  (test-begin "uniq-compare")
+  (let ()
+    (define (random-runs len runmax)
+      (let loop ([len len] [l '()])
+        (if (<= len 0) l
+          (let ([x (random (most-positive-fixnum))]
+                [runlen (add1 (random runmax))])
+            (let inner ([n runlen] [l l])
+              (if (zero? n)
+                (loop (- len runlen) l)
+                (inner (sub1 n) (cons x l))))))))
+
+    (define (test-compare rpt len runmax)
+      (do ([i 0 (add1 i)])
+        [(= rpt i)]
+        (let* ([l (random-runs len runmax)]
+               [u1 (uniq = l)]
+               [u2 (uniq! = l)])
+          (test-equal u1 u2))))
+
+    (test-group "slow"
+      (time (test-compare 2000 200000 500))
+      (time (test-compare 100 200000 3))
+      (time (test-compare 10 2000000 2))
+      (time (test-compare 100 2000000 5000)))
+    )
+  (test-end "uniq-compare")
+  )

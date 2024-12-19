@@ -6,7 +6,7 @@
           argmax ∘ compose flip map-with-values map-values
           gv-convolve kernel sobel
           split-string
-          list-set! flip-assoc!
+          list-set! flip-assoc! uniq uniq!
           let-list
           numeral->number
           )
@@ -226,6 +226,37 @@
                   (set-cdr! pr CAR)))
               l)
     l)
+  (define (uniq eql? l)
+    ; This works like the unix uniq utility.  That is, it only removes
+    ; *adjacent* similar items.  SRFI 1 has delete-duplicates, which
+    ; is quadratic.  uniq is linear and will produce a similar effect providing
+    ; you don't care about order.  Which, if that's the case, maybe you should
+    ; have been using some of the lset functions from that library earlier.
+    (if (null? l) '()
+      (let loop ([hd (car l)] [tl (cdr l)] [acc '()])
+        (cond
+          [(null? tl) (reverse! (cons hd acc))]
+          [(eql? hd (car tl))
+           (loop hd (cdr tl) acc)]
+          [else (loop (car tl) (cdr tl) (cons hd acc))]))))
+  (define (uniq! eql? l)
+    ; This implementation inspired by filter! in SRFI 1.
+    (if (null? l) '()
+      (letrec ([scan-out (lambda (hd prev tl)
+                           (let lp ([tl tl])
+                             (if (pair? tl)
+                               (if (eql? hd (car tl))
+                                 (lp (cdr tl))
+                                 (begin (set-cdr! prev tl)
+                                        (scan-in (car tl) tl (cdr tl))))
+                               (set-cdr! prev tl))))]
+               [scan-in (lambda (hd prev tl)
+                          (if (pair? tl)
+                            (if (eql? hd (car tl))
+                              (scan-out hd prev (cdr tl))
+                              (scan-in (car tl) tl (cdr tl)))))])
+        (scan-in (car l) l (cdr l))
+        l)))
 (define (numeral->number c)
   (assert (char-numeric? c))
   (- (char->integer c) (char->integer #\0)))
