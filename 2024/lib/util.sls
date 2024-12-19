@@ -3,7 +3,7 @@
           get-lines-from-file gridvector-from-file print-gv
           maybe-enqueue!
           range
-          argmax flip map-with-values map-values
+          argmax ∘ compose flip map-with-values map-values
           gv-convolve kernel sobel
           split-string
           list-set! flip-assoc!
@@ -37,6 +37,18 @@
             (if (> fx fmax)
               (loop (cdr l) (car l) fx)
               (loop (cdr l) xmax fmax)))])))
+  ; ∘ (Ob - U+2218 RING OPERATOR) function composition
+  ; TODO: with some clever define-syntax hackery, we can produce a procedure
+  ; with a name like car∘cdr
+  (define (∘ f g)
+    (if (procedure-known-single-valued? g)
+      (lambda args
+        (f (apply g args)))
+      (lambda args
+        (call-with-values
+          (lambda () (apply g args))
+          f))))
+  (define compose ∘)
   (define (flip f)
     (lambda (x2 x1 . args)
       (apply f x1 x2 args)))
@@ -197,7 +209,7 @@
              [else
                (loop (cdr s) (cons (car s) cs) ss)])))]
       [(s)
-       (split-string char-whitespace?)]))
+       (split-string s char-whitespace?)]))
 
   (define (list-set! l n0 obj)
     (let loop ([l l] [n n0])

@@ -39,7 +39,7 @@
       (values g h))))
 
 (define (has-path? g src dst)
-  (let ([dist (flip-assoc! (dijkstra g src))])
+  (let ([dist (dijkstra g src)])
     (finite? (cdr (assoc dst dist)))))
 (define (drop-byte! g ht x y)
   (let ([node (hashtable-ref ht (list x y) #f)])

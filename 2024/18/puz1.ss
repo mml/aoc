@@ -59,7 +59,7 @@
         (for ([v (graph-adjacency-list-nodes g)])
           (display (node->struct v))
           (newline))
-        (let ([dist (flip-assoc! (dijkstra g (hashtable-ref ht '(0 0) #f)))]
+        (let ([dist (dijkstra g (hashtable-ref ht '(0 0) #f))]
               [dst (hashtable-ref ht (list (sub1 w) (sub1 h)) #f)])
           (display (cdr (assoc dst dist)))
           (newline)

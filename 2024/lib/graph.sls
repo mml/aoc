@@ -9,9 +9,11 @@
           make-graph-adjacency-list graph-adjacency-list-nodes graph-adjacency-list-nodes-set!
           graph-add-node! graph-remove-node!
           make-prioq prioq-add! prioq-pop! prioq-empty? decrease!
+          make-visited-set set-visited! visited?
           dijkstra)
   (import (chezscheme)
-          (for))
+          (for)
+          (util))
 (define-record-type node
   (fields name (mutable props))
   (nongenerative)
@@ -32,8 +34,6 @@
              (set-cdr! (car props) v)]
             [else
               (loop (car props) (cdr props))]))])))
-
-
 
 (define-record-type node-adjacency-list
   (parent node)
@@ -146,7 +146,7 @@
               (find-it (or after left) (or before l) l (cdr l))]))])))
 (define (prioq-find pred q)
   (find pred (unbox q)))
-(define prioq->alist unbox)
+(define prioq->alist (∘ flip-assoc! unbox))
 
 (define (dijkstra g src)
   (let* ([visited (make-visited-set g)]
@@ -180,11 +180,11 @@
 ;
 (record-writer (type-descriptor node-adjacency-list)
   (lambda (r p wr)
-    (display "#<node " p)
-    (display (node-name r) p)
-    (display " " p)
+    (display "#" p)
     (wr (length (node-adjacency-list-neighbors r)) p)
-    (display " neighbors>" p)))
+    (display "<node " p)
+    (display (node-name r) p)
+    (display ">" p)))
 (record-writer (type-descriptor neighbor)
   (lambda (r p wr)
     (display "#<neighbor " p)
