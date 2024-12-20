@@ -4,6 +4,7 @@
     make-gv make-gv-same-size gv-width gv-height gv-vec
     display-gv gv->string
     gv-ref gv-set! gv-update!
+    gv-set-prop! gv-propq gv-prop-value
     gv-copy
     gv-neighbors gv-neighbor-coords gv-neighbors-8 gv-legal-coords? gv-legal-x? gv-legal-y?
     compass-direction compass-directions compass-direction?
@@ -15,14 +16,18 @@
     (fields x y)
     (nongenerative))
   (define-record-type gv ; gridvector
-    (fields width height vec)
+    (fields width height vec props)
     (protocol
       (lambda (new)
         (case-lambda
           [(width height)
-           (new width height (make-vector (fx* width height) #f))]
+           (new width height
+                (make-vector (fx* width height) #f)
+                (make-vector (fx* width height) '()))]
           [(width height obj)
-           (new width height (make-vector (fx* width height) obj))])))
+           (new width height
+                (make-vector (fx* width height) obj)
+                (make-vector (fx* width height) '()))])))
     (nongenerative))
   (define display-gv
     (case-lambda
@@ -52,6 +57,19 @@
     (vector-ref (gv-vec gv) (vec-offset gv x y)))
   (define (gv-set! gv x y v)
     (vector-set! (gv-vec gv) (vec-offset gv x y) v))
+  (define (gv-set-prop! gv x y k v)
+    (let* ([props (gv-props gv)]
+           [i (vec-offset gv x y)]
+           [alist (vector-ref props i)])
+      (vector-set! props i (cons (cons k v) alist))))
+  (define (gv-propq gv x y k)
+    ; When you need to distinguish #f from 'not found'
+    (assq k (vector-ref (gv-props gv) (vec-offset gv x y))))
+  (define (gv-prop-value gv x y k)
+    ; When you just want the value
+    (cond
+      [(gv-propq gv x y k) => cdr]
+      [else #f]))
   (define (gv-update! gv x y f)
     (let ([v (gv-vec gv)]
           [n (vec-offset gv x y)])
@@ -94,7 +112,8 @@
         (if (gv-legal-coords? gv x y)
           (values x y)
           (values #f #f)))))
-    (define (gv-neighbor-fetcher gv x y)
+
+  (define (gv-neighbor-fetcher gv x y)
     (rec fetch
       (case-lambda
         [(dx dy)

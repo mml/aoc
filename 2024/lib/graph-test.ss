@@ -1,28 +1,36 @@
-(import (graph))
+(import (chezscheme) (graph))
 
-(define (doit)
-  (define q (make-prioq))
-  (prioq-add! q 'foo 99)
-  (printf "~a\n" q)
-  (prioq-add! q 'bar 12)
-  (printf "~a\n" q)
-  (prioq-add! q 'baz 100)
-  (printf "~a\n" q)
+(let ([test-on-test-end-diff
+        (lambda (runner)
+          (let ([result (test-result-kind runner)])
+            (when (eq? result 'fail)
+              (let ([err (test-result-ref runner 'actual-error)]
+                    [expected (test-result-ref runner 'expected-value)]
+                    [actual (test-result-ref runner 'actual-value)])
+                (when err
+                  (display "Error: ")
+                  (write err)
+                  (newline))
+                (display "Expected: ")
+                (write expected)
+                (newline)
+                (display "Actual:   ")
+                (write actual)
+                ;(newline)
+                ;(display "Diff:     ")
+                ;(display-diff expected actual)
+                (newline)))))])
 
-  (decrease! q 'bar 11)
-  (printf "~a\n" q)
-
-  (decrease! q 'foo 90)
-  (printf "~a\n" q)
-
-  (decrease! q 'baz 85)
-  (printf "~a\n" q)
-
-  (prioq-add! q 'quux 80)
-  (printf "~a\n" q)
-
-  (decrease! q 'foo 77)
-  (printf "~a\n" q)
+  (test-runner-on-test-end! (test-runner-get) test-on-test-end-diff)
+  (test-group "make-node"
+    (let ([v (make-node "foo")])
+      (test-equal "foo" (node-name v))))
+  (test-group "props"
+    (let ([v (make-node "foo")])
+      (node-set-prop! v 'baz 'quux)
+      (test-equal 'quux (node-prop-value v 'baz))
+      (test-equal 'quux (cdr (node-propq v 'baz)))
+      (test-equal #f (node-propq v 'nope))
+      (node-set-prop! v 'baz 'quuux)
+      (test-equal 'quuux (node-prop-value v 'baz))))
   )
-
-(doit)

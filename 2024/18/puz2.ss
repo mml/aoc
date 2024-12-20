@@ -19,9 +19,9 @@
         (let ([name (make-node? ch x y)])
           (when name
             (let ([node (make-node-adjacency-list name)])
-              (node-prop-set! node 'x x)
-              (node-prop-set! node 'y y)
-              (node-prop-set! node 'ch ch)
+              (node-set-prop! node 'x x)
+              (node-set-prop! node 'y y)
+              (node-set-prop! node 'ch ch)
               (hashtable-set! h (list x y) node)
               (graph-add-node! g node)))))
       (let-values ([(c* node*) (hashtable-entries h)])

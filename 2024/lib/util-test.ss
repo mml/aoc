@@ -96,4 +96,10 @@
       (time (test-compare 100 2000000 5000)))
     )
   (test-end "uniq-compare")
+
+  (test-group "any-all"
+    (test-assert (any? = 10 '(-1 0 11 10)))
+    (test-assert (not (any? = 10 '(1 2 3 9))))
+    (test-assert (all? = 10 '(10 10 10 10)))
+    (test-assert (not (all? = 10 '(10 10 10 9)))))
   )

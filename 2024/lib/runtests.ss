@@ -7,4 +7,8 @@
 (test-runner-current (test-runner-simple))
 (include "for-test.ss")
 (test-runner-current (test-runner-simple))
+(include "graph-test.ss")
+(test-runner-current (test-runner-simple))
+(include "gridvector-test.ss")
+(test-runner-current (test-runner-simple))
 (include "util-test.ss")

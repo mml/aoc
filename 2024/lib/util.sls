@@ -28,6 +28,7 @@
       [(_ f x1 x2 x3 ... ys) (exists (lambda (y) (f x1 x2 x3 ... y)) ys)]))
 
   (define (argmax f l)
+    ; This is a very clueless argmax.
     (let loop ([l l] [xmax #f] [fmax #f])
       (cond
         [(null? l) xmax]
@@ -38,9 +39,9 @@
               (loop (cdr l) (car l) fx)
               (loop (cdr l) xmax fmax)))])))
   ; ∘ (Ob - U+2218 RING OPERATOR) function composition
-  ; TODO: with some clever define-syntax hackery, we can produce a procedure
-  ; with a name like car∘cdr
   (define (∘ f g)
+    ; TODO: with some clever define-syntax hackery, we can produce a procedure
+    ; with a name like car∘cdr
     (if (procedure-known-single-valued? g)
       (lambda args
         (f (apply g args)))
@@ -162,8 +163,7 @@
         #;(printf "= ~a~n" (gv-ref B x y)))
         B))
 
-  ; Work queues
-  (define (maybe-enqueue! q x)
+  (define (maybe-enqueue! q x)  ; Work queues
     (if (null? q)
       (list x)
       (let loop ([pair q][hd (car q)][tl (cdr q)])
@@ -175,8 +175,7 @@
           [else
             (loop tl (car tl) (cdr tl))]))))
 
-  ; structured binding
-  (define-syntax (let-list stx)
+  (define-syntax (let-list stx)   ; structured binding
     (syntax-case stx ()
       ;[(_ ([]) body ...)
       ; #'(begin body ...)]
@@ -214,7 +213,7 @@
   (define (list-set! l n0 obj)
     (let loop ([l l] [n n0])
       (cond
-        [(null? l) (error 'list-set! "out of bounds" n)]
+        [(null? l) (error 'list-set! "out of bounds" n0)]
         [(zero? n) (set-car! l obj)]
         [else (loop (cdr l) (sub1 n))]))
     l)
@@ -260,7 +259,6 @@
 (define (numeral->number c)
   (assert (char-numeric? c))
   (- (char->integer c) (char->integer #\0)))
-
 
 
   (pretty-format 'let-list '(_ ([bracket (x ...) e]) #f body ...))
