@@ -78,14 +78,10 @@
                 sum))
 
   (test-end "for-test"))
-#|
-(for/fold ([sum 0]
-           [rev-roots '()])
-          (result (printf "~a~%~a~%" sum rev-roots))
-          ([i '(1 2 3 4)])
-  (when (> i 2) (break))
-  (values (+ sum i) (cons (sqrt i) rev-roots)))
 
-(printf "---~%")
-|#
-
+;(for/fold ([sum 0]
+;           [rev-roots '()])
+;          (result (printf "~a~%~a~%" sum rev-roots))
+;          ([i '(1 2 3 4)])
+;  (when (> i 2) (break))
+;  (values (+ sum i) (cons (sqrt i) rev-roots)))

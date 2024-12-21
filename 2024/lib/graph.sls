@@ -10,7 +10,7 @@
           graph-add-node! graph-remove-node!
           make-prioq prioq-add! prioq-pop! prioq-empty? decrease!
           make-visited-set set-visited! visited?
-          dijkstra)
+          dijkstra dijkstra!)
   (import (chezscheme)
           (for)
           (util))
@@ -172,6 +172,16 @@
           (loop))))
     (prioq->alist distances)))
 
+    (define (dijkstra! g prop-key src)
+      (let ([costs (dijkstra g src)])
+        (for ([v (graph-adjacency-list-nodes g)])
+          (cond
+            [(assq v costs)
+             => (lambda (cost)
+                  (node-set-prop! v prop-key (cdr cost)))]
+            [else (assertion-violationf 'dijkstra!
+                                        "Missing cost for node ~s" v)]))
+        costs))
 ;
 (record-writer (type-descriptor node-adjacency-list)
   (lambda (r p wr)

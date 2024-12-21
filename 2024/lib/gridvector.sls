@@ -2,14 +2,15 @@
 (library (gridvector)
   (export
     make-gv make-gv-same-size gv-width gv-height gv-vec
+    gv-props
     display-gv gv->string
     gv-ref gv-set! gv-update!
-    gv-set-prop! gv-propq gv-prop-value
+    gv-props-set! gv-set-prop! gv-propq gv-prop-value
     gv-copy
     gv-neighbors gv-neighbor-coords gv-neighbors-8 gv-legal-coords? gv-legal-x? gv-legal-y?
     compass-direction compass-directions compass-direction?
     compass-directions-cardinal compass-directions-ordinal compass-directions-all
-    with-gv-neighbors gv-neighbor-fetcher direction directions
+    with-gv-neighbors in-gv-neighbors/indices gv-neighbor-fetcher direction directions
     in-gv/indices)
   (import (chezscheme) (product) (for))
   (define-record-type vec2
@@ -62,6 +63,8 @@
            [i (vec-offset gv x y)]
            [alist (vector-ref props i)])
       (vector-set! props i (cons (cons k v) alist))))
+  (define (gv-props-set! gv x y alist)
+    (vector-set! (gv-props gv) (vec-offset gv x y) alist))
   (define (gv-propq gv x y k)
     ; When you need to distinguish #f from 'not found'
     (assq k (vector-ref (gv-props gv) (vec-offset gv x y))))
@@ -170,8 +173,7 @@
           (set! i (add1 i)))
         (gv-vec gv1))
       gv2))
-  ; a la racket
-  (define (in-gv/indices gv)
+  (define (in-gv/indices gv)    ; a la racket
     (let-values ([(xs ys) (product (iota (gv-width gv))
                                    (iota (gv-height gv)))])
       (values (map (lambda (x y) (gv-ref gv x y)) xs ys)

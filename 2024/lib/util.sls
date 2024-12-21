@@ -1,12 +1,13 @@
 (library (util)
-  (export id any? all?
+  (export id any? any-not? all? none?
           get-lines-from-file gridvector-from-file print-gv
           maybe-enqueue!
           range
           argmax ∘ compose flip map-with-values map-values
           gv-convolve kernel sobel
           split-string
-          list-set! flip-assoc! uniq uniq!
+          list-set! flip-assoc! uniq uniq! counts-by
+          car-< cdr-<
           let-list
           numeral->number
           )
@@ -21,11 +22,19 @@
       [(_ f ys) (andmap f ys)]
       [(_ f x1 ys) (andmap (lambda (y) (f x1 y)) ys)]
       [(_ f x1 x2 x3 ... ys) (andmap (lambda (y) (f x1 x2 x3 ... y)) ys)]))
+  (define-syntax none?
+    (syntax-rules ()
+      [(_ f arg ...)
+       (all? (lambda args (not (apply f args))) arg ...)]))
   (define-syntax any?
     (syntax-rules ()
       [(_ f ys) (exists f ys)]
       [(_ f x1 ys) (exists (lambda (y) (f x1 y)) ys)]
       [(_ f x1 x2 x3 ... ys) (exists (lambda (y) (f x1 x2 x3 ... y)) ys)]))
+  (define-syntax any-not?
+    (syntax-rules ()
+      [(_ f arg ...)
+       (any? (lambda args (not (apply f args))) arg ...)]))
 
   (define (argmax f l)
     ; This is a very clueless argmax.
@@ -83,7 +92,7 @@
             [else (loop (get-line (current-input-port)) (cons line lines))])))))
   (define gridvector-from-file
     (case-lambda
-      [(path f)
+      [(path char->datum make-props)
        (let ([lines (get-lines-from-file path)])
          (let* ([w (string-length (car lines))]
                 [h (length lines)]
@@ -94,10 +103,14 @@
                [else
                  (for-each
                    (lambda (x char)
-                     (gv-set! g x y (f char)))
+                     (gv-set! g x y (char->datum char))
+                     (when make-props
+                       (gv-props-set! g x y (make-props g x y char))))
                    (iota w)
                    (string->list (car lines)))
                  (loop (add1 y) (cdr lines))]))))]
+      [(path char->datum)
+       (gridvector-from-file path char->datum #f)]
       [(path)
        (gridvector-from-file path id)]))
   (define print-gv
@@ -256,6 +269,17 @@
                               (scan-in (car tl) tl (cdr tl)))))])
         (scan-in (car l) l (cdr l))
         l)))
+  (define (counts-by f l)
+    (let ([h (make-hashtable equal-hash equal?)])
+      (for-each (lambda (x) (hashtable-update! h (f x) add1 0)) l)
+      (let-values ([(Kvec Vvec) (hashtable-entries h)])
+        (let lp ([i 0] [l '()])
+          (if (= i (vector-length Kvec)) l
+            (lp (add1 i) (cons (cons (vector-ref Kvec i) (vector-ref Vvec i)) l)))))))
+  (define (car-< a b)       ; car-< and
+    (< (car a) (car b)))
+  (define (cdr-< a b)       ; cdr-< are handy for sorting
+    (< (cdr a) (cdr b)))
 (define (numeral->number c)
   (assert (char-numeric? c))
   (- (char->integer c) (char->integer #\0)))
