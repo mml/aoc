@@ -26,7 +26,7 @@ int main() {
     for (int i = 0; i < 2000; i++) {
       sec = secret(sec);
     }
-    printf("%lu\n", sec);
+    //printf("%lu\n", sec);
     sum += sec;
   }
   printf("\nsum = %lu\n", sum);

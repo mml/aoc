@@ -1,4 +1,4 @@
-CFLAGS += -Wall
+CFLAGS += -Wall -O3
 LIBDIRS=../lib::build:~/.akku/lib::~/.akku/libobj
 SCHEME=scheme
 RUN_SCHEME=$(SCHEME) --libdirs $(LIBDIRS)
