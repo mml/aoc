@@ -8,7 +8,7 @@
           split-string
           list-set! flip-assoc! uniq uniq! counts-by
           car-< cdr-<
-          let-list
+          let-list and-let*
           numeral->number
           )
   (import (chezscheme)
@@ -203,6 +203,32 @@
        #'(let ([id1 (car l)]
                [id2 (cadr l)])
            (let-list ([(id3 ...) (cddr l)]) body ...))]))
+
+(define-syntax and-let*       ; as in SRFI 2
+  (syntax-rules ()            ; this implementation copied from Oleg Kiselyov
+    [(_ ()) #t]
+    [(_ claws)    ; no body
+       ; re-write (and-let* ((claw ... last-claw)) ) into
+       ; (and-let* ((claw ...)) body) with 'body' derived from the last-claw
+     (and-let* "search-last-claw" () claws)]
+    [(_ "search-last-claw" first-claws ((exp)))
+     (and-let* first-claws exp)]	; (and-let* (... (exp)) )
+    [(_ "search-last-claw" first-claws ((var exp)))
+     (and-let* first-claws exp)]	; (and-let* (... (var exp)) )
+    [(_ "search-last-claw" first-claws (var))
+     (and-let* first-claws var)]	; (and-let* (... var) )
+    [(_ "search-last-claw" (first-claw ...) (claw . rest))
+     (and-let* "search-last-claw" (first-claw ... claw) rest)]
+    
+    ; now 'body' is present
+    [(_ () . body) (begin . body)]	; (and-let* () form ...)
+    [(_ ((exp) . claws) . body)		; (and-let* ( (exp) claw... ) body ...)
+     (and exp (and-let* claws . body))]
+    [(_ ((var exp) . claws) . body)	; (and-let* ((var exp) claw...)body...)
+     (let ((var exp)) (and var (and-let* claws . body)))]
+    [(_ (var . claws) . body)		; (and-let* ( var claw... ) body ...)
+     (and var (and-let* claws . body))]
+))
 
   (define split-string
     (case-lambda

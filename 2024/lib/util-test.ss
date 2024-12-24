@@ -107,4 +107,18 @@
     (test-assert (none? = 10 '(1 2 3 9)))
     (test-assert (not (none? = 10 '(-1 0 11 10))))
     )
+
+  (test-group "and-let*"
+    (test-equal #t (and-let* ()))
+    (test-equal 6
+                (and-let* ([x 5]
+                           [y (add1 x)]
+                           [(even? y)])
+                          y))
+    (test-equal #f
+                (and-let* ([x 4]
+                           [y (add1 x)]
+                           [(even? y)])
+                          y))
+    )
   )
