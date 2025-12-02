@@ -1,1 +1,1 @@
-../../input/2019/01/input.txt
+../../input/2019/01-input.txt
